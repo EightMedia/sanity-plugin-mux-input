@@ -42,6 +42,16 @@ export default function VideoPlayer({
       return {error: new TypeError('Asset has no playback ID')}
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (error) {
+      // Als `suspend-react` een Promise gooit (voor lazy imports / secrets),
+      // willen we die NIET als "error" behandelen, maar laten afhandelen door Suspense.
+      if (error && typeof (error as any).then === 'function') {
+        throw error
+      }
+
+      // Echte fouten loggen we en geven we door aan de UI
+      // zodat je een duidelijke foutmelding ziet in de player.
+      // eslint-disable-next-line no-console
+      console.error('Error while resolving Mux video sources', error)
       return {error}
     }
   }, [asset, client, thumbnailWidth])
@@ -92,6 +102,7 @@ export default function VideoPlayer({
               />
             )}
             <MuxPlayer
+              key={asset.playbackId}
               poster={isAudio ? undefined : thumbnailSrc}
               ref={muxPlayer}
               {...props}
